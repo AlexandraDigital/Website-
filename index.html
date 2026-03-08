@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Alexandra-Art — Where Art Meets the Digital Age</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --bg:#0d0d0d; --bg2:#161616; --gold:#c9a84c; --text:#f0ede6; --muted:#888; --border:#2a2a2a; }
+    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+
+    header { position:sticky; top:0; z-index:100; background:var(--bg); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 2.5rem; height:70px; }
+    .logo { font-family:'Playfair Display',serif; font-size:1.15rem; font-weight:700; letter-spacing:.12em; color:var(--text); user-select:none; cursor:pointer; }
+    nav { display:flex; gap:2.5rem; align-items:center; margin-left:3rem; }
+    nav a { font-size:.8rem; font-weight:400; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); text-decoration:none; transition:color .2s; cursor:pointer; user-select:none; }
+    nav a:hover { color:var(--text); }
+    nav a.active { color:var(--gold); border-bottom:1.5px solid var(--gold); padding-bottom:2px; }
+    .cart-btn { padding:.5rem 1.4rem; border:1.5px solid #555; border-radius:999px; font-size:.8rem; color:var(--text); text-decoration:none; transition:border-color .2s; flex-shrink:0; }
+    .cart-btn:hover { border-color:var(--text); }
+
+    /* Mobile header overrides */
+    @media(max-width:640px) {
+      header { padding:0 1rem; height:60px; }
+      .logo { font-size:1rem; }
+      nav { gap:.9rem; margin-left:.8rem; }
+      nav a { font-size:.65rem; letter-spacing:.08em; }
+      .cart-btn { display:none; } /* hidden in header on mobile — replaced by FAB */
+    }
+
+    /* Floating cart button (mobile only) */
+    .cart-fab { display:none; }
+    @media(max-width:640px){
+      .cart-fab {
+        display:flex; align-items:center; gap:.5rem;
+        position:fixed; bottom:1.5rem; right:1.2rem;
+        background:#1a1a1a; border:1.5px solid var(--gold);
+        color:var(--gold); border-radius:999px;
+        padding:.6rem 1.1rem; font-size:.78rem; font-weight:500;
+        letter-spacing:.08em; cursor:pointer; z-index:500;
+        box-shadow:0 4px 20px rgba(0,0,0,.5);
+        transition:background .2s, transform .2s;
+      }
+      .cart-fab:hover { background:var(--gold); color:#000; }
+      .cart-fab:active { transform:scale(.95); }
+      .cart-fab-badge {
+        background:var(--gold); color:#000; border-radius:50%;
+        width:18px; height:18px; font-size:.62rem; font-weight:700;
+        display:none; align-items:center; justify-content:center;
+      }
+      .cart-fab-badge.visible { display:flex; }
+    }
+
+    .page { display:none; }
+    .page.active { display:block; }
+
+    .hero { position:relative; min-height:580px; display:flex; align-items:center; padding:5rem 2.5rem; overflow:hidden; }
+    .hero::before { content:''; position:absolute; right:-5%; top:50%; transform:translateY(-50%); width:55%; height:90%; background:radial-gradient(ellipse 55% 60% at 70% 40%,rgba(80,30,130,.55) 0%,transparent 65%),radial-gradient(ellipse 40% 50% at 90% 70%,rgba(20,100,80,.45) 0%,transparent 60%); pointer-events:none; filter:blur(2px); }
+    .hero-inner { position:relative; z-index:1; max-width:560px; }
+    .hero-label { font-size:.72rem; letter-spacing:.25em; text-transform:uppercase; color:var(--gold); margin-bottom:1.4rem; font-weight:400; }
+    .hero h1 { font-family:'Playfair Display',serif; font-size:clamp(3rem,6vw,5.5rem); font-weight:900; line-height:1.05; color:var(--text); margin-bottom:1.5rem; }
+    .hero p { font-size:.95rem; color:var(--muted); line-height:1.7; margin-bottom:2.5rem; max-width:380px; }
+    .hero-btns { display:flex; gap:1.5rem; align-items:center; }
+    .btn-explore { padding:.8rem 1.8rem; background:transparent; color:var(--text); font-size:.85rem; border:1.5px solid var(--text); cursor:pointer; transition:background .25s,color .25s; border-radius:4px; }
+    .btn-explore:hover { background:var(--text); color:var(--bg); }
+    .btn-link { font-size:.85rem; color:var(--muted); background:none; border:none; cursor:pointer; transition:color .2s; }
+    .btn-link:hover { color:var(--text); }
+
+    .section-header { display:flex; align-items:baseline; justify-content:space-between; padding:1.5rem 2.5rem 0; border-top:1px solid var(--border); }
+    .section-header h2 { font-family:'Playfair Display',serif; font-size:2rem; font-weight:700; color:var(--text); padding-bottom:1rem; }
+    .section-header .count { font-size:.8rem; color:var(--muted); letter-spacing:.1em; }
+
+    .gallery-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:0; border-top:1px solid var(--border); }
+    .card { display:flex; flex-direction:column; border-right:1px solid var(--border); position:relative; }
+    .card:nth-child(5) { border-right:none; }
+    .card-img { width:100%; aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; font-size:4rem; position:relative; overflow:hidden; }
+    .card-upload-overlay { display:none; position:absolute; inset:0; background:rgba(0,0,0,.55); align-items:center; justify-content:center; flex-direction:column; gap:.5rem; cursor:pointer; color:#fff; font-size:.78rem; letter-spacing:.1em; }
+    .card-upload-overlay svg { width:26px; height:26px; }
+    body.admin-mode .card-img:hover .card-upload-overlay { display:flex; }
+    body.admin-mode [contenteditable="true"] { outline:1px dashed rgba(201,168,76,.45); cursor:text; border-radius:2px; min-width:20px; }
+    body.admin-mode [contenteditable="true"]:focus { outline:1px solid var(--gold); background:rgba(201,168,76,.07); }
+
+    .grad-purple { background:linear-gradient(135deg,#9b2fc4 0%,#4a1a6b 60%,#2d1245 100%); }
+    .grad-blue   { background:linear-gradient(135deg,#1a6bcc 0%,#0d9ab5 60%,#0a4a8c 100%); }
+    .grad-green  { background:linear-gradient(135deg,#1a5c3a 0%,#2a8c5a 50%,#0d3d26 100%); }
+    .grad-brown  { background:linear-gradient(135deg,#a05a10 0%,#7a3a08 50%,#3d1c04 100%); }
+    .grad-indigo { background:linear-gradient(135deg,#3a1a7c 0%,#5a2aac 40%,#1a0a4a 100%); }
+    .grad-red    { background:linear-gradient(135deg,#8c1a2e 0%,#cc2a44 40%,#4a0a18 100%); }
+
+    .card-body { padding:1rem 1.1rem 1.5rem; background:var(--bg2); flex:1; border-top:1px solid var(--border); }
+    .badge { display:inline-block; font-size:.6rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; padding:.2rem .55rem; border:1px solid var(--gold); color:var(--gold); margin-bottom:.6rem; }
+    .card-title { font-family:'Playfair Display',serif; font-size:1.05rem; font-weight:700; color:var(--text); margin-bottom:.2rem; }
+    .card-artist { font-size:.75rem; color:var(--muted); margin-bottom:.75rem; }
+    .price { font-size:1rem; font-weight:500; color:var(--text); }
+
+    .inner-page { padding:3.5rem 2.5rem 6rem; min-height:calc(100vh - 150px); border-top:1px solid var(--border); }
+    .inner-page h1 { font-family:'Playfair Display',serif; font-size:clamp(2.2rem,5vw,3.5rem); font-weight:900; color:var(--text); margin-bottom:1.2rem; }
+    .inner-page .lead { font-size:.95rem; color:var(--muted); line-height:1.8; max-width:620px; margin-bottom:3rem; }
+    .artists-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:1.5rem; margin-top:2.5rem; }
+    .artist-card { background:var(--bg2); border:1px solid var(--border); padding:1.5rem; display:flex; flex-direction:column; gap:.5rem; }
+    .artist-avatar { width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.6rem; margin-bottom:.5rem; }
+    .artist-name { font-family:'Playfair Display',serif; font-size:1rem; font-weight:700; color:var(--text); }
+    .artist-specialty { font-size:.75rem; color:var(--gold); letter-spacing:.08em; text-transform:uppercase; }
+    .artist-bio { font-size:.78rem; color:var(--muted); line-height:1.6; margin-top:.3rem; }
+    .contact-email { font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--gold); margin-bottom:1rem; display:block; text-decoration:none; }
+    .contact-email:hover { text-decoration:underline; color:var(--gold); }
+    .contact-note { font-size:.9rem; color:var(--muted); }
+
+    /* DELETE / ADD BUTTONS (admin only) */
+    .delete-btn { display:none; position:absolute; top:.6rem; right:.6rem; background:#c0392b; border:none; color:#fff; border-radius:50%; width:22px; height:22px; font-size:.85rem; line-height:1; cursor:pointer; z-index:10; align-items:center; justify-content:center; opacity:.85; transition:opacity .2s; }
+    .delete-btn:hover { opacity:1; }
+    body.admin-mode .delete-btn { display:flex; }
+    .artist-card { position:relative; }
+    .about-card { position:relative; }
+    .add-artist-btn { display:none; border:1px dashed var(--gold); background:transparent; color:var(--gold); padding:1.5rem; font-size:.85rem; letter-spacing:.1em; cursor:pointer; width:100%; text-align:center; transition:background .2s; }
+    .add-artist-btn:hover { background:rgba(201,168,76,.08); }
+    body.admin-mode .add-artist-btn { display:block; }
+    .add-about-btn { display:none; border:1px dashed var(--gold); background:transparent; color:var(--gold); padding:1.5rem; font-size:.85rem; letter-spacing:.1em; cursor:pointer; width:100%; text-align:center; transition:background .2s; margin-top:.5rem; }
+    .add-about-btn:hover { background:rgba(201,168,76,.08); }
+    body.admin-mode .add-about-btn { display:block; }
+
+    /* LOGIN MODAL */
+    .modal-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.8); z-index:9000; align-items:center; justify-content:center; }
+    .modal-backdrop.open { display:flex; }
+    .modal { background:#1a1a1a; border:1px solid var(--border); border-radius:12px; padding:2.4rem 2.5rem 2rem; display:flex; flex-direction:column; gap:1.1rem; width:320px; position:relative; }
+    .modal h3 { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:700; color:var(--text); }
+    .modal p { font-size:.78rem; color:var(--muted); margin-top:-.4rem; }
+    .modal-close { position:absolute; top:.9rem; right:1.1rem; background:none; border:none; color:var(--muted); font-size:1.2rem; cursor:pointer; }
+    .modal-close:hover { color:var(--text); }
+    .modal input { width:100%; padding:.75rem 1rem; background:#0d0d0d; border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:.875rem; font-family:'Inter',sans-serif; outline:none; transition:border-color .2s; }
+    .modal input:focus { border-color:var(--gold); }
+    .modal input::placeholder { color:#555; }
+    .modal-submit { width:100%; padding:.8rem; background:var(--gold); color:#000; border:none; border-radius:6px; font-size:.85rem; font-weight:600; letter-spacing:.08em; cursor:pointer; transition:opacity .2s; font-family:'Inter',sans-serif; }
+    .modal-submit:hover { opacity:.85; }
+    .modal-error { font-size:.75rem; color:#e05555; text-align:center; min-height:1rem; }
+
+    /* ADMIN BAR */
+    .admin-bar { position:fixed; bottom:-80px; left:50%; transform:translateX(-50%); background:#1a1a1a; border:1px solid var(--gold); border-radius:999px; padding:.6rem 1.4rem; display:flex; align-items:center; gap:1.2rem; font-size:.75rem; color:var(--gold); letter-spacing:.1em; z-index:9998; transition:bottom .4s cubic-bezier(.34,1.56,.64,1); white-space:nowrap; }
+    body.admin-mode .admin-bar { bottom:1.5rem; }
+    body.admin-mode .add-work-card { display:flex !important; }
+    .card { position:relative; }
+    .add-work-card:hover { border-color:var(--gold) !important; color:var(--gold) !important; }
+    .admin-bar-label { opacity:.75; }
+    .admin-exit { background:none; border:1px solid var(--gold); color:var(--gold); border-radius:999px; padding:.25rem .8rem; font-size:.7rem; letter-spacing:.1em; cursor:pointer; transition:background .2s,color .2s; }
+    .admin-exit:hover { background:var(--gold); color:#000; }
+    .admin-publish { background:var(--gold); border:none; color:#000; border-radius:999px; padding:.28rem .9rem; font-size:.7rem; font-weight:600; letter-spacing:.1em; cursor:pointer; transition:opacity .2s; font-family:'Inter',sans-serif; }
+    .admin-publish:hover { opacity:.8; }
+    .admin-publish:disabled { opacity:.5; cursor:not-allowed; }
+
+    /* TOAST */
+    .toast { position:fixed; top:1.2rem; left:50%; transform:translateX(-50%) translateY(-60px); background:#1a1a1a; border:1px solid #333; color:var(--gold); font-size:.75rem; letter-spacing:.12em; padding:.55rem 1.2rem; border-radius:999px; z-index:9999; transition:transform .35s cubic-bezier(.34,1.56,.64,1); pointer-events:none; }
+    .toast.show { transform:translateX(-50%) translateY(0); }
+
+    footer { border-top:1px solid var(--border); padding:1.6rem 2.5rem; display:flex; flex-direction:column; align-items:flex-start; gap:.4rem; background:var(--bg); }
+    .footer-logo { font-family:'Playfair Display',serif; font-size:1rem; font-weight:700; letter-spacing:.12em; color:var(--text); }
+    footer p { font-size:.75rem; color:var(--muted); }
+
+    /* ADD TO CART BUTTON */
+    .add-to-cart { width:100%; margin-top:.8rem; padding:.6rem; background:transparent; border:1.5px solid var(--gold); color:var(--gold); font-size:.75rem; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; border-radius:3px; transition:background .2s,color .2s; font-family:'Inter',sans-serif; }
+    .add-to-cart:hover { background:var(--gold); color:#000; }
+    .add-to-cart.in-cart { background:var(--gold); color:#000; }
+
+    /* CART BUTTON BADGE */
+    .cart-btn { position:relative; }
+    .cart-badge { display:none; position:absolute; top:-6px; right:-6px; background:var(--gold); color:#000; border-radius:50%; width:16px; height:16px; font-size:.6rem; font-weight:700; align-items:center; justify-content:center; }
+    .cart-badge.visible { display:flex; }
+
+    /* CART DRAWER */
+    .cart-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:8000; }
+    .cart-overlay.open { display:block; }
+    .cart-drawer { position:fixed; top:0; right:-420px; width:400px; max-width:100vw; height:100vh; background:#111; border-left:1px solid var(--border); z-index:8001; display:flex; flex-direction:column; transition:right .35s cubic-bezier(.4,0,.2,1); }
+    .cart-drawer.open { right:0; }
+    .cart-header { display:flex; align-items:center; justify-content:space-between; padding:1.4rem 1.6rem; border-bottom:1px solid var(--border); }
+    .cart-header h2 { font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:700; color:var(--text); }
+    .cart-close { background:none; border:none; color:var(--muted); font-size:1.3rem; cursor:pointer; transition:color .2s; }
+    .cart-close:hover { color:var(--text); }
+    .cart-items { flex:1; overflow-y:auto; padding:1rem 1.6rem; display:flex; flex-direction:column; gap:1rem; }
+    .cart-empty { text-align:center; color:var(--muted); font-size:.85rem; margin-top:3rem; }
+    .cart-item { display:flex; gap:1rem; align-items:flex-start; padding-bottom:1rem; border-bottom:1px solid var(--border); }
+    .cart-item-thumb { width:54px; height:54px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:1.5rem; flex-shrink:0; }
+    .cart-item-info { flex:1; }
+    .cart-item-title { font-size:.9rem; font-weight:600; color:var(--text); margin-bottom:.2rem; }
+    .cart-item-artist { font-size:.75rem; color:var(--muted); }
+    .cart-item-price { font-size:.9rem; color:var(--gold); font-weight:500; margin-top:.3rem; }
+    .cart-item-remove { background:none; border:none; color:var(--muted); font-size:1rem; cursor:pointer; padding:.2rem; transition:color .2s; }
+    .cart-item-remove:hover { color:#e05555; }
+    .cart-footer { padding:1.4rem 1.6rem; border-top:1px solid var(--border); }
+    .cart-total { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem; }
+    .cart-total-label { font-size:.85rem; color:var(--muted); letter-spacing:.08em; text-transform:uppercase; }
+    .cart-total-amount { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:700; color:var(--text); }
+    #paypal-button-container { min-height:48px; }
+
+    @media(max-width:1024px){ .gallery-grid{grid-template-columns:repeat(3,1fr);} .card:nth-child(5){border-right:1px solid var(--border);} .card:nth-child(3),.card:nth-child(6){border-right:none;} }
+    @media(max-width:640px){
+      .hero{padding:3rem 1.2rem;}
+      .gallery-grid{grid-template-columns:repeat(2,1fr);}
+      .section-header{padding:1.2rem 1.2rem 0;}
+      .inner-page{padding:2.5rem 1.2rem 4rem;}
+      footer{padding:1.4rem 1.2rem;}
+      .cart-drawer { top:auto; bottom:-100vh; right:0; width:100vw; max-width:100vw; height:85vh; border-left:none; border-top:1px solid var(--border); border-radius:16px 16px 0 0; transition:bottom .35s cubic-bezier(.4,0,.2,1), right 0s; }
+      .cart-drawer.open { bottom:0; right:0; }
+    }
+  </style>
+  <script src="https://www.paypal.com/sdk/js?client-id=AYvZfsW_b4WUHex8XUCs9TLrzOMWVzfebqca1n-8zGrvavs2ATaOKU0C3NHvpwNZf38Zop5mk31Ta46T&currency=USD"></script>
+</head>
+<body>
+
+  <!-- FLOATING CART BUTTON (mobile) -->
+  <button class="cart-fab" onclick="openCart()">
+    🛒 Cart <span class="cart-fab-badge" id="cartFabBadge">0</span>
+  </button>
+
+  <!-- CART OVERLAY + DRAWER -->
+  <div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
+  <div class="cart-drawer" id="cartDrawer">
+    <div class="cart-header">
+      <h2>Your Cart</h2>
+      <button class="cart-close" onclick="closeCart()">&#x2715;</button>
+    </div>
+    <div class="cart-items" id="cartItems">
+      <p class="cart-empty" id="cartEmpty">Your cart is empty.</p>
+    </div>
+    <div class="cart-footer">
+      <div class="cart-total">
+        <span class="cart-total-label">Total</span>
+        <span class="cart-total-amount" id="cartTotal">$0.00</span>
+      </div>
+      <div id="paypal-button-container"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="admin-bar">
+    <span class="admin-bar-label">🔐 Admin Mode</span>
+    <button class="admin-publish" onclick="openPublishModal()">🚀 Publish</button>
+    <button class="admin-exit" onclick="exitAdmin()">Exit</button>
+  </div>
+
+  <!-- LOGIN MODAL -->
+  <div class="modal-backdrop" id="loginBackdrop">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal()">&#x2715;</button>
+      <h3>Admin Login</h3>
+      <p>Enter your credentials to continue.</p>
+      <input type="text"     id="loginUser" placeholder="Username" autocomplete="off"/>
+      <input type="password" id="loginPass" placeholder="Password" autocomplete="off" onkeydown="if(event.key==='Enter')submitLogin()"/>
+      <div class="modal-error" id="loginError"></div>
+      <button class="modal-submit" onclick="submitLogin()">Sign In</button>
+    </div>
+  </div>
+
+  <header>
+    <span class="logo" onclick="handleLogoTap()">Alexandra-Art</span>
+    <nav>
+      <a onclick="showPage('gallery')" id="nav-gallery" class="active">Gallery</a>
+      <a onclick="showPage('artists')" id="nav-artists">Artists</a>
+      <a onclick="showPage('about')"   id="nav-about">About</a>
+      <a onclick="showPage('contact')" id="nav-contact">Contact</a>
+    </nav>
+    <a class="cart-btn" href="#" onclick="openCart();return false;">Cart <span class="cart-badge" id="cartBadge">0</span></a>
+  </header>
+
+  <!-- GALLERY PAGE -->
+  <div class="page active" id="page-gallery">
+    <section class="hero">
+      <div class="hero-inner">
+        <p class="hero-label" id="heroLabel">Digital Art</p>
+        <h1 id="heroTitle">Where Art Meets the Digital Age</h1>
+        <p id="heroSub">Artwork may be downloaded, without watermark, after purchasing.</p>
+        <div class="hero-btns">
+          <button class="btn-explore" onclick="showPage('gallery')">Explore Collection</button>
+          <button class="btn-link"    onclick="showPage('artists')">View Artists &#x2192;</button>
+        </div>
+      </div>
+    </section>
+    <div class="section-header">
+      <h2>Featured Works</h2>
+      <span class="count" id="workCount">6 works</span>
+    </div>
+    <div class="gallery-grid" id="galleryGrid">
+      <div class="card">
+        <button class="delete-btn" onclick="deleteWork(this)" title="Delete artwork">&#x2715;</button>
+        <div class="card-img grad-purple">&#x1F338;<div class="card-upload-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload Photo</div></div>
+        <div class="card-body"><span class="badge" id="b1">New</span><div class="card-title" id="t1">Old Works</div><div class="card-artist" id="a1">Alexandra Diaz</div><div class="price" id="p1">$149</div><button class="add-to-cart" id="atc1" onclick="addToCart(1)">Add to Cart</button></div>
+      </div>
+      <div class="card">
+        <button class="delete-btn" onclick="deleteWork(this)" title="Delete artwork">&#x2715;</button>
+        <div class="card-img grad-blue">&#x26A1;<div class="card-upload-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload Photo</div></div>
+        <div class="card-body"><span class="badge" id="b2">Bestseller</span><div class="card-title" id="t2">Geometric Storm</div><div class="card-artist" id="a2">Marcus Webb</div><div class="price" id="p2">$89</div><button class="add-to-cart" id="atc2" onclick="addToCart(2)">Add to Cart</button></div>
+      </div>
+      <div class="card">
+        <button class="delete-btn" onclick="deleteWork(this)" title="Delete artwork">&#x2715;</button>
+        <div class="card-img grad-green">&#x1F33F;<div class="card-upload-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload Photo</div></div>
+        <div class="card-body"><span class="badge" id="b3">Limited</span><div class="card-title" id="t3">Fractal Garden</div><div class="card-artist" id="a3">Lena Morel</div><div class="price" id="p3">$210</div><button class="add-to-cart" id="atc3" onclick="addToCart(3)">Add to Cart</button></div>
+      </div>
+      <div class="card">
+        <button class="delete-btn" onclick="deleteWork(this)" title="Delete artwork">&#x2715;</button>
+        <div class="card-img grad-brown">&#x1F311;<div class="card-upload-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload Photo</div></div>
+        <div class="card-body"><span class="badge" id="b4">Rare</span><div class="card-title" id="t4">Void Protocol</div><div class="card-artist" id="a4">DJ Crypta</div><div class="price" id="p4">$320</div><button class="add-to-cart" id="atc4" onclick="addToCart(4)">Add to Cart</button></div>
+      </div>
+      <div class="card">
+        <button class="delete-btn" onclick="deleteWork(this)" title="Delete artwork">&#x2715;</button>
+        <div class="card-img grad-indigo">&#x2600;&#xFE0F;<div class="card-upload-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload Photo</div></div>
+        <div class="card-body"><div class="card-title" id="t5">Solar Drift</div><div class="card-artist" id="a5">Amara Osei</div><div class="price" id="p5">$175</div><button class="add-to-cart" id="atc5" onclick="addToCart(5)">Add to Cart</button></div>
+      </div>
+      <div class="card">
+        <button class="delete-btn" onclick="deleteWork(this)" title="Delete artwork">&#x2715;</button>
+        <div class="card-img grad-red">&#x1F48E;<div class="card-upload-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload Photo</div></div>
+        <div class="card-body"><span class="badge" id="b6">New</span><div class="card-title" id="t6">Liquid Chrome</div><div class="card-artist" id="a6">V. Petrov</div><div class="price" id="p6">$95</div><button class="add-to-cart" id="atc6" onclick="addToCart(6)">Add to Cart</button></div>
+      </div>
+      <div class="card add-work-card" id="addWorkCard" onclick="addWork()" style="display:none;cursor:pointer;align-items:center;justify-content:center;flex-direction:column;gap:.6rem;color:var(--muted);font-size:.8rem;letter-spacing:.1em;border:1px dashed var(--border);min-height:200px;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Artwork
+      </div>
+    </div>
+  </div>
+
+  <!-- ARTISTS PAGE -->
+  <div class="page" id="page-artists">
+    <div class="inner-page">
+      <h1 id="artistsTitle">Our Artists</h1>
+      <p class="lead" id="artistsLead">The creative minds behind every piece on this platform. Each artist brings a unique perspective, vision, and voice to the world of digital art.</p>
+      <div class="artists-grid" id="artistsGrid">
+        <div class="artist-card"><button class="delete-btn" onclick="deleteCard(this)" title="Delete artist">&#x2715;</button><div class="artist-avatar grad-purple">&#x1F338;</div><div class="artist-name" id="an1">Alexandra Diaz</div><div class="artist-specialty" id="as1">Digital Illustration</div><div class="artist-bio" id="ab1">I'm Alexandra Diaz. I'm 22 years old. I'm a student working towards her bachelor's degree in Visual Arts:Electronic Media. I created this website because I need income for a career change in Biomedical Engineering. I'm starting from zero in this field and i need the money to do online learning from a college that is good in that field. I love design but I want to make a difference in people's lives another way. I'm currently a digital artist, as you can see, and i'm hoping this takes off so i can have a job and study remotely.</div></div>
+        <button class="add-artist-btn" onclick="addArtist()">+ Add Artist</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABOUT PAGE -->
+  <div class="page" id="page-about">
+    <div class="inner-page">
+      <h1 id="aboutTitle">About Alexandra-Art</h1>
+      <p class="lead" id="aboutLead">Alexandra-Art was born from multiple attempts to create a website that can become a source of income. At first, i was hesitant to use AI however as time passed and this tech became more integrated into our future, i decided to give it a try. My vision with AI as my assistant led to the creation of this website. Now i can sell my digital drawings/designs online for download and do it from the comfort of my home.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.5rem;margin-top:1rem;" id="aboutGrid">
+        <div class="about-card" style="border:1px solid var(--border);padding:1.5rem;background:var(--bg2);"><button class="delete-btn" onclick="deleteCard(this)" title="Delete card">&#x2715;</button><div style="font-size:1.5rem;margin-bottom:.8rem;">&#x1F3A8;</div><div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;margin-bottom:.5rem;" id="abt1">Curated Quality</div><div style="font-size:.82rem;color:var(--muted);line-height:1.7;" id="abd1">Every piece on our platform is hand-selected by our editorial team for originality and technical excellence.</div></div>
+        <div class="about-card" style="border:1px solid var(--border);padding:1.5rem;background:var(--bg2);"><button class="delete-btn" onclick="deleteCard(this)" title="Delete card">&#x2715;</button><div style="font-size:1.5rem;margin-bottom:.8rem;">&#x1F30D;</div><div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;margin-bottom:.5rem;" id="abt2">Global Artists</div><div style="font-size:.82rem;color:var(--muted);line-height:1.7;" id="abd2">We work with creators from over 40 countries, bringing diverse perspectives and styles to one platform.</div></div>
+        <div class="about-card" style="border:1px solid var(--border);padding:1.5rem;background:var(--bg2);"><button class="delete-btn" onclick="deleteCard(this)" title="Delete card">&#x2715;</button><div style="font-size:1.5rem;margin-bottom:.8rem;">&#x1F4E5;</div><div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;margin-bottom:.5rem;" id="abt3">Instant Downloads</div><div style="font-size:.82rem;color:var(--muted);line-height:1.7;" id="abd3">Purchase and download high-resolution files instantly, watermark-free, for personal or commercial use.</div></div>
+      </div>
+      <button class="add-about-btn" onclick="addAboutCard()">+ Add Card</button>
+    </div>
+  </div>
+
+  <!-- CONTACT PAGE -->
+  <div class="page" id="page-contact">
+    <div class="inner-page">
+      <h1 id="contactTitle">Get in Touch</h1>
+      <p class="lead" id="contactLead">For inquiries, collaborations, or support:</p>
+      <a class="contact-email" id="contactEmail" href="mailto:Alexandradj101@gmail.com">Alexandradj101@gmail.com</a>
+      <p class="contact-note" id="contactNote">We'd love to hear from you.</p>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-logo" id="footerLogo" onclick="handleFooterTap()" style="cursor:pointer;">Alexandra-Art</div>
+    <p>&copy; 2026 Alexandra-Art. All rights reserved.</p>
+  </footer>
+
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+    const _u = atob('QWxleGFuZHJhRA==');
+    const _p = atob('MjBHb2RMb3ZlQA==');
+    const EDITABLE_IDS = [
+      'heroLabel','heroTitle','heroSub',
+      'b1','t1','a1','p1','b2','t2','a2','p2','b3','t3','a3','p3','b4','t4','a4','p4','t5','a5','p5','b6','t6','a6','p6',
+      'an1','as1','ab1','an2','as2','ab2','an3','as3','ab3','an4','as4','ab4','an5','as5','ab5','an6','as6','ab6',
+      'artistsTitle','artistsLead',
+      'aboutTitle','aboutLead','abt1','abd1','abt2','abd2','abt3','abd3',
+      'contactTitle','contactLead','contactEmail','contactNote'
+    ];
+
+    let _logoTapCount = 0, _logoTapTimer = null;
+    function handleLogoTap() {
+      showPage('gallery');
+      _logoTapCount++;
+      clearTimeout(_logoTapTimer);
+      if (_logoTapCount >= 5) { _logoTapCount = 0; openModal(); return; }
+      _logoTapTimer = setTimeout(() => { _logoTapCount = 0; }, 1500);
+    }
+    function handleFooterTap() {
+      showPage('gallery');
+      _tapCount++;
+      clearTimeout(_tapTimer);
+      if (_tapCount >= 5) { _tapCount = 0; openModal(); return; }
+      _tapTimer = setTimeout(() => { _tapCount = 0; }, 1500);
+    }
+
+    // Desktop keyboard shortcut
+    document.addEventListener('keydown', e => {
+      if (e.shiftKey && e.ctrlKey && e.key === 'A') openModal();
+    });
+
+    function openModal() {
+      document.getElementById('loginBackdrop').classList.add('open');
+      document.getElementById('loginUser').value = '';
+      document.getElementById('loginPass').value = '';
+      document.getElementById('loginError').textContent = '';
+      setTimeout(() => document.getElementById('loginUser').focus(), 100);
+    }
+
+    function closeModal() {
+      document.getElementById('loginBackdrop').classList.remove('open');
+    }
+
+    function submitLogin() {
+      const user = document.getElementById('loginUser').value.trim();
+      const pass = document.getElementById('loginPass').value;
+      if (user === _u && pass === _p) {
+        closeModal();
+        enterAdmin();
+      } else {
+        document.getElementById('loginError').textContent = 'Incorrect username or password.';
+        document.getElementById('loginPass').value = '';
+        document.getElementById('loginPass').focus();
+      }
+    }
+
+    function enterAdmin() {
+      document.body.classList.add('admin-mode');
+      EDITABLE_IDS.forEach(id => { const el = document.getElementById(id); if(el) el.contentEditable='true'; });
+      // Inject publish modal into DOM (admin-only)
+      if (!document.getElementById('publishBackdrop')) {
+        const m = document.createElement('div');
+        m.className = 'modal-backdrop';
+        m.id = 'publishBackdrop';
+        m.innerHTML = `<div class="modal" style="width:380px;">
+          <button class="modal-close" onclick="closePublishModal()">&#x2715;</button>
+          <h3>Publish to Netlify</h3>
+          <p>Enter your Netlify credentials to deploy your changes live.</p>
+          <input type="text" id="netlifyToken" placeholder="Personal Access Token" autocomplete="off"/>
+          <input type="text" id="netlifySiteId" placeholder="Site ID (e.g. abc123.netlify.app)" autocomplete="off"/>
+          <div style="font-size:.7rem;color:#666;line-height:1.5;">Find these in Netlify → User Settings → Applications (token) and Site Settings → General (Site ID).</div>
+          <div class="modal-error" id="publishError"></div>
+          <button class="modal-submit" onclick="publishToNetlify()">Deploy Now</button>
+        </div>`;
+        document.body.appendChild(m);
+      }
+      showToast('Welcome, Admin 👋');
+    }
+
+    function exitAdmin() {
+      document.body.classList.remove('admin-mode');
+      EDITABLE_IDS.forEach(id => { const el = document.getElementById(id); if(el) el.contentEditable='false'; });
+      // Remove publish modal from DOM
+      const m = document.getElementById('publishBackdrop');
+      if (m) m.remove();
+      showToast('Exited admin mode');
+    }
+
+    function showPage(name) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+      document.getElementById('page-'+name).classList.add('active');
+      document.getElementById('nav-'+name).classList.add('active');
+      window.scrollTo(0,0);
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    function deleteCard(btn) {
+      const card = btn.closest('.artist-card, .about-card');
+      if (card) { card.remove(); showToast('Deleted ✓'); }
+    }
+
+    function deleteWork(btn) {
+      const card = btn.closest('.card');
+      if (card) { card.remove(); updateWorkCount(); showToast('Artwork removed ✓'); }
+    }
+
+    function updateWorkCount() {
+      const count = document.querySelectorAll('#galleryGrid .card:not(.add-work-card)').length;
+      document.getElementById('workCount').textContent = count + ' work' + (count !== 1 ? 's' : '');
+    }
+
+    let workCounter = 7;
+    function addWork() {
+      const grads = ['grad-purple','grad-blue','grad-green','grad-brown','grad-indigo','grad-red'];
+      const emojis = ['🎨','✦','🌸','⚡','🌿','💫'];
+      const n = workCounter++;
+      const g = grads[(n - 1) % grads.length];
+      const e = emojis[(n - 1) % emojis.length];
+      const uploadSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`;
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <button class="delete-btn" onclick="deleteWork(this)" title="Delete artwork">✕</button>
+        <div class="card-img ${g}">${e}<div class="card-upload-overlay">${uploadSVG}Upload Photo</div></div>
+        <div class="card-body">
+          <span class="badge">New</span>
+          <div class="card-title" id="t${n}" contenteditable="true">Artwork Title</div>
+          <div class="card-artist" id="a${n}" contenteditable="true">Artist Name</div>
+          <div class="price" id="p${n}" contenteditable="true">$0</div>
+        </div>`;
+      const grid = document.getElementById('galleryGrid');
+      grid.insertBefore(card, document.getElementById('addWorkCard'));
+      card.querySelector('[contenteditable]').focus();
+      updateWorkCount();
+      showToast('Artwork added ✓');
+    }
+
+    let artistCounter = 7;
+    function addArtist() {
+      const grads = ['grad-purple','grad-blue','grad-green','grad-brown','grad-indigo','grad-red'];
+      const emojis = ['🎨','⚡','🌿','🌑','☀️','💎'];
+      const g = grads[(artistCounter - 1) % grads.length];
+      const e = emojis[(artistCounter - 1) % emojis.length];
+      const n = artistCounter++;
+      const card = document.createElement('div');
+      card.className = 'artist-card';
+      card.innerHTML = `<button class="delete-btn" onclick="deleteCard(this)" title="Delete artist">✕</button>
+        <div class="artist-avatar ${g}">${e}</div>
+        <div class="artist-name" id="an${n}" contenteditable="true">Artist Name</div>
+        <div class="artist-specialty" id="as${n}" contenteditable="true">Specialty</div>
+        <div class="artist-bio" id="ab${n}" contenteditable="true">Artist bio goes here.</div>`;
+      const grid = document.getElementById('artistsGrid');
+      grid.insertBefore(card, grid.querySelector('.add-artist-btn'));
+      card.querySelector('.artist-name').focus();
+      showToast('Artist added ✓');
+    }
+
+    let aboutCounter = 4;
+    function addAboutCard() {
+      const n = aboutCounter++;
+      const card = document.createElement('div');
+      card.className = 'about-card';
+      card.style.cssText = 'border:1px solid var(--border);padding:1.5rem;background:var(--bg2);position:relative;';
+      card.innerHTML = `<button class="delete-btn" onclick="deleteCard(this)" title="Delete card">✕</button>
+        <div style="font-size:1.5rem;margin-bottom:.8rem;">✦</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;margin-bottom:.5rem;" id="abt${n}" contenteditable="true">Card Title</div>
+        <div style="font-size:.82rem;color:var(--muted);line-height:1.7;" id="abd${n}" contenteditable="true">Card description goes here.</div>`;
+      document.getElementById('aboutGrid').appendChild(card);
+      card.querySelector('[contenteditable]').focus();
+      showToast('Card added ✓');
+    }
+
+    // Admin button visible click triger
+    // ── NETLIFY PUBLISH ───────────────────────────────────────────
+    let _netlifyToken = '', _netlifySiteId = '';
+
+    function openPublishModal() {
+      document.getElementById('netlifyToken').value = _netlifyToken;
+      document.getElementById('netlifySiteId').value = _netlifySiteId;
+      document.getElementById('publishError').textContent = '';
+      document.getElementById('publishBackdrop').classList.add('open');
+    }
+    function closePublishModal() {
+      document.getElementById('publishBackdrop').classList.remove('open');
+    }
+
+    async function publishToNetlify() {
+      const token  = document.getElementById('netlifyToken').value.trim();
+      const siteId = document.getElementById('netlifySiteId').value.trim();
+      const errEl  = document.getElementById('publishError');
+      if (!token || !siteId) { errEl.textContent = 'Both fields are required.'; return; }
+      _netlifyToken  = token;
+      _netlifySiteId = siteId;
+      errEl.textContent = '';
+
+      const btn = document.querySelector('.admin-publish');
+      btn.disabled = true;
+      btn.textContent = '⏳ Deploying…';
+
+      try {
+        // Serialize current page HTML
+        const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+        const encoder = new TextEncoder();
+        const data = encoder.encode(html);
+
+        // Step 1: compute SHA1 of file
+        const hashBuf = await crypto.subtle.digest('SHA-1', data);
+        const hashArr = Array.from(new Uint8Array(hashBuf));
+        const sha1 = hashArr.map(b => b.toString(16).padStart(2,'0')).join('');
+
+        // Step 2: create deploy with file manifest
+        const deployRes = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/deploys`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ files: { '/index.html': sha1 }, async: false })
+        });
+        if (!deployRes.ok) {
+          const e = await deployRes.json().catch(() => ({}));
+          throw new Error(e.message || `Deploy create failed (${deployRes.status})`);
+        }
+        const deploy = await deployRes.json();
+
+        // Step 3: upload file if required
+        if (deploy.required && deploy.required.length > 0) {
+          const uploadRes = await fetch(`https://api.netlify.com/api/v1/deploys/${deploy.id}/files/index.html`, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/octet-stream' },
+            body: data
+          });
+          if (!uploadRes.ok) {
+            const e = await uploadRes.json().catch(() => ({}));
+            throw new Error(e.message || `Upload failed (${uploadRes.status})`);
+          }
+        }
+
+        closePublishModal();
+        showToast('✅ Published to Netlify!');
+      } catch(err) {
+        errEl.textContent = err.message || 'Publish failed. Check your token and Site ID.';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🚀 Publish';
+      }
+    }
+    let cart = [];
+    const GRAD_MAP = {
+      'grad-purple':'linear-gradient(135deg,#9b2fc4,#4a1a6b)',
+      'grad-blue':'linear-gradient(135deg,#1a6bcc,#0d9ab5)',
+      'grad-green':'linear-gradient(135deg,#1a5c3a,#2a8c5a)',
+      'grad-brown':'linear-gradient(135deg,#a05a10,#7a3a08)',
+      'grad-indigo':'linear-gradient(135deg,#3a1a7c,#5a2aac)',
+      'grad-red':'linear-gradient(135deg,#8c1a2e,#cc2a44)'
+    };
+
+    function getCardData(n) {
+      const titleEl  = document.getElementById('t'+n);
+      const artistEl = document.getElementById('a'+n);
+      const priceEl  = document.getElementById('p'+n);
+      if (!titleEl) return null;
+      const card = titleEl.closest('.card');
+      const imgDiv = card ? card.querySelector('.card-img') : null;
+      let emoji = '🎨', grad = 'linear-gradient(135deg,#333,#111)';
+      if (imgDiv) {
+        const gradClass = [...imgDiv.classList].find(c => c.startsWith('grad-'));
+        if (gradClass) grad = GRAD_MAP[gradClass] || grad;
+        emoji = imgDiv.childNodes[0]?.textContent?.trim() || '🎨';
+      }
+      const priceStr = priceEl ? priceEl.textContent.replace(/[^0-9.]/g,'') : '0';
+      return { id: n, title: titleEl.textContent.trim(), artist: artistEl ? artistEl.textContent.trim() : '', price: parseFloat(priceStr) || 0, emoji, grad };
+    }
+
+    function addToCart(n) {
+      const existing = cart.find(i => i.id === n);
+      if (existing) { removeFromCart(n); return; }
+      const data = getCardData(n);
+      if (!data) return;
+      cart.push(data);
+      const btn = document.getElementById('atc'+n);
+      if (btn) { btn.textContent = 'In Cart ✓'; btn.classList.add('in-cart'); }
+      updateCartUI();
+      openCart();
+      showToast('Added to cart ✓');
+    }
+
+    function removeFromCart(n) {
+      cart = cart.filter(i => i.id !== n);
+      const btn = document.getElementById('atc'+n);
+      if (btn) { btn.textContent = 'Add to Cart'; btn.classList.remove('in-cart'); }
+      paypalRendered = false;
+      updateCartUI();
+    }
+
+    function updateCartUI() {
+      const badge = document.getElementById('cartBadge');
+      const totalEl = document.getElementById('cartTotal');
+      const itemsEl = document.getElementById('cartItems');
+      const total = cart.reduce((s, i) => s + i.price, 0);
+      badge.textContent = cart.length;
+      badge.classList.toggle('visible', cart.length > 0);
+      const fab = document.getElementById('cartFabBadge');
+      if (fab) { fab.textContent = cart.length; fab.classList.toggle('visible', cart.length > 0); }
+      totalEl.textContent = '$' + total.toFixed(2);
+      itemsEl.innerHTML = '';
+      if (cart.length === 0) {
+        itemsEl.innerHTML = '<p class="cart-empty">Your cart is empty.</p>';
+      } else {
+        cart.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'cart-item';
+          div.innerHTML = `
+            <div class="cart-item-thumb" style="background:${item.grad}">${item.emoji}</div>
+            <div class="cart-item-info">
+              <div class="cart-item-title">${item.title}</div>
+              <div class="cart-item-artist">${item.artist}</div>
+              <div class="cart-item-price">$${item.price.toFixed(2)}</div>
+            </div>
+            <button class="cart-item-remove" onclick="removeFromCart(${item.id})" title="Remove">&#x2715;</button>`;
+          itemsEl.appendChild(div);
+        });
+      }
+      renderPayPal();
+    }
+
+    function openCart() {
+      document.getElementById('cartDrawer').classList.add('open');
+      document.getElementById('cartOverlay').classList.add('open');
+    }
+    function closeCart() {
+      document.getElementById('cartDrawer').classList.remove('open');
+      document.getElementById('cartOverlay').classList.remove('open');
+    }
+
+    // ── PAYPAL ────────────────────────────────────────────────────
+    let paypalRendered = false;
+    function renderPayPal() {
+      const container = document.getElementById('paypal-button-container');
+      if (cart.length === 0) { container.innerHTML = ''; paypalRendered = false; return; }
+      if (paypalRendered) return;
+      paypalRendered = true;
+      container.innerHTML = '';
+      paypal.Buttons({
+        style: { layout:'vertical', color:'gold', shape:'rect', label:'pay', height:42 },
+        createOrder(data, actions) {
+          const items = cart.map(i => ({
+            name: (i.title + ' — ' + i.artist).slice(0,127),
+            unit_amount: { currency_code:'USD', value: i.price.toFixed(2) },
+            quantity: '1'
+          }));
+          const total = cart.reduce((s,i) => s + i.price, 0);
+          return actions.order.create({
+            purchase_units:[{
+              description: 'Alexandra-Art Digital Artwork',
+              amount:{
+                currency_code:'USD',
+                value: total.toFixed(2),
+                breakdown:{ item_total:{ currency_code:'USD', value: total.toFixed(2) } }
+              },
+              items
+            }]
+          });
+        },
+        onApprove(data, actions) {
+          return actions.order.capture().then(() => {
+            cart = [];
+            document.querySelectorAll('.add-to-cart').forEach(b => { b.textContent='Add to Cart'; b.classList.remove('in-cart'); });
+            updateCartUI();
+            closeCart();
+            showToast('Payment complete — thank you! 🎉');
+          });
+        },
+        onError() { showToast('Payment error. Please try again.'); }
+      }).render('#paypal-button-container');
+    }
+  </script>
+</body>
+</html>
